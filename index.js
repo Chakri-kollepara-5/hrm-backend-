@@ -20,6 +20,8 @@ exports.verifyAttendance = functions.https.onCall(attendanceHandler.verifyAttend
 
 // --- SADHANA ---
 exports.submitSadhana = functions.https.onCall(sadhanaHandler.submitSadhana);
+exports.getSadhanaMe = functions.https.onCall(sadhanaHandler.getSadhanaMe);
+exports.getSadhanaAdmin = functions.https.onCall(sadhanaHandler.getSadhanaAdmin);
 
 // --- ACCOMMODATION ---
 exports.updateAccommodationStatus = functions.https.onCall(accommodationHandler.updateAccommodationStatus);
