@@ -10,7 +10,13 @@ const sadhanaHandler = require('./handlers/sadhanaHandler');
 const accommodationHandler = require('./handlers/accommodationHandler');
 const paymentHandler = require('./handlers/paymentHandler');
 const sevaHandler = require('./handlers/sevaHandler');
-const cors = require('cors')({ origin: true });
+const cors = require('cors')({ 
+  origin: '*', // Most permissive for troubleshooting
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+});
 
 // Helper to wrap functions with CORS support for Cloud Run/Fetch compatibility
 const wrapWithCors = (handler, type = 'call') => {
@@ -22,7 +28,15 @@ const wrapWithCors = (handler, type = 'call') => {
     });
   }
   return functions.https.onRequest((req, res) => {
-    cors(req, res, () => handler(req, res));
+    console.log(`BACKEND: Received ${req.method} request for ${req.url}`);
+    cors(req, res, () => {
+      try {
+        return handler(req, res);
+      } catch (err) {
+        console.error("Handler Error:", err);
+        res.status(500).json({ error: { message: err.message } });
+      }
+    });
   });
 };
 
@@ -57,16 +71,6 @@ exports.createOrder = wrapWithCors(paymentHandler.createOrder);
 exports.razorpayWebhook = wrapWithCors(paymentHandler.razorpayWebhook, 'request');
 
 // --- TEST ---
-exports.ping = functions.https.onRequest((req, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    res.set('Access-Control-Max-Age', '3600');
-    res.status(204).send('');
-    return;
-  }
-  
+exports.ping = wrapWithCors((req, res) => {
   res.json({ result: { success: true, message: 'pong' } });
-});
+}, 'request');
